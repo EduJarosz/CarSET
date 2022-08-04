@@ -1,0 +1,215 @@
+<?php
+require_once '../models/login.php';
+if (!isset($_SESSION)) {
+    session_start();
+}
+
+$login = new Login();
+
+if ($login->verificaLogin()) {
+    $logado = $_SESSION['usuario'];
+} else {
+   $login->sair();
+   header("location:../controllers/loginController.php?botao=sair");
+}
+
+$vagaId = $_REQUEST["vagaId"];
+
+?>
+<html !DOCTYPE>
+	<title>CarSet</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../skin/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+    <link rel="stylesheet" type="text/css" href="../skin/css/customizado.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+
+
+    <body class="w3-content" style="max-width:100%">
+
+	        <!--menu lateral -->
+	        <nav class="w3-sidebar w3-bar-block w3-light-blue w3-collapse w3-top" style="z-index:3;width:270px" id="mySidebar" >
+	            <div class="w3-container w3-display-container w3-padding-16">
+	                <i onclick="w3_close()" class="fa fa-remove w3-hide-large w3-button w3-display-topright"></i>
+	                <h2 class="w3-wide w3-text-green"><b><img src="../views/imagem/logo.png" width="200px" height="100px"></b></h2>
+	            </div>
+	            <div class="w3-padding-64 w3-large w3-text-black" style="font-weight:bold">
+	               
+	                <a href="index.php" class="w3-bar-item w3-button w3-hover-black w3-deep-orange w3-border w3-border-black">Patio</a>
+	                <a href="planos_off.php" class="w3-bar-item w3-button w3-hover-black w3-deep-orange w3-border w3-border-black">Planos</a>
+	                <a href="cadastro_fun_off.php" class="w3-bar-item w3-button w3-hover-black w3-deep-orange w3-border w3-border-black">Cadastro Funcionario</a>
+	                <a href="relatorio_caixa_off.php" class="w3-button w3-block w3-left-align w3-hover-black w3-deep-orange w3-border w3-border-black" id="myBtn2"> Relatorio de caixa </a>
+	                <a href="relatorio_patio_off.php" class="w3-button w3-block w3-left-align w3-hover-black w3-deep-orange w3-border w3-border-black" id="myBtn2"> Relatorio de patio </a>
+	                <a href="../controllers/loginController.php?botao=sair" class="w3-bar-item w3-button w3-hover-black w3-deep-orange w3-border w3-border-black">Sair</a>    
+	            </div>
+	           
+	        </nav>
+
+
+	        <!-- Top menu on small screens -->
+	        <header class="w3-bar w3-top w3-hide-large w3-black w3-xlarge">
+	            <div class="w3-bar-item w3-padding-24 w3-wide">LOGO</div>
+	            <a href="javascript:void(0)" class="w3-bar-item w3-button w3-padding-24 w3-right" onclick="w3_open()"><i class="fa fa-bars"></i></a>
+	        </header>
+
+	        <!-- Overlay effect when opening sidebar on small screens -->
+	        <div class="w3-overlay w3-hide-large" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
+
+	        <!-- !PAGE CONTENT! -->
+	        <div class="w3-main" style="margin-left:270px">
+
+	            <!-- Push down content on small screens -->
+	            <div class="w3-hide-large" style="margin-top:83px"></div>
+
+	            <!-- Top header -->
+	            <header class="w3-container w3-deep-orange">
+	                <h3 class="w3-left w3-deep-orange">Entrada</h3>
+	                <p class="w3-right">
+	                    <i class="fa fa-shopping-cart w3-margin-right"></i>
+	                    <i class="fa fa-search"></i>
+	                </p>
+	            </header>
+
+	            
+					
+					<form id="entrada" method="POST" action="../controllers/avulsoController.php">
+						<div class="cadastro-new">
+
+							<input type="hidden" name="vagaId" value="<?php echo $vagaId; ?>" />
+
+						    <label>Placa:</label>
+						    <input class="w3-input w3-border" type="text" name="placa" />
+						    <label for="fab_id">Fabricante:</label>
+							<select name="fab_id" id="fab_id" class="w3-input w3-border" type="text">
+								<option value=""></option>
+								<?php
+									$sql = "SELECT fab_id, fab_nome
+											FROM fabricante
+											";
+									
+									$res= Conexao::getInstance()->prepare($sql);
+									$res->execute();
+									while ( $row=$res ->fetch(PDO::FETCH_ASSOC) ) {
+										echo '<option value="'.$row['fab_id'].'">'.$row['fab_nome'].'</option>';
+									}
+								?>
+							</select>
+
+							<label for="mod_id">Modelos:</label>
+							<span class="carregando">Aguarde, carregando...</span>
+							<select name="mod_id" id="mod_id" class="w3-input w3-border" type="text">
+								<option value="">-- Escolha um modelo --</option>
+							</select>
+							<!--<script src="http://www.google.com/jsapi"></script>-->
+							<script type="text/javascript" src="jquery-1.11.2.min.js"></script>
+							<script type="text/javascript">
+							  //google.load('jquery', '1.3');
+							</script>		
+
+							<script type="text/javascript">
+							jQuery(function(){
+								jQuery('#fab_id').change(function(){
+									if( jQuery(this).val() ) {
+										jQuery('#mod_id').hide();
+										jQuery('.carregando').show();
+										jQuery.getJSON('modelos.ajax.php?search=',{fab_id: jQuery(this).val(), ajax: 'true'}, function(j){
+											var options = '<option value=""></option>';	
+											for (var i = 0; i < j.length; i++) {
+												options += '<option value="' + j[i].mod_id + '">' + j[i].mod_nome + '</option>';
+											}	
+											jQuery('#mod_id').html(options).show();
+											jQuery('.carregando').hide();
+										});
+									} else {
+										jQuery('#mod_id').html('<option value="">– Escolha um modelo –</option>');
+									}
+								});
+							});
+							</script>
+							<label>Data Entrada:</label>
+							<input class="w3-input w3-border" type="date" name="datae">
+							<label>Hora Entrada:</label>
+							<input class="w3-input w3-border" type="time" name="horae">
+							
+						</div>
+						<div class="cadastro-new">
+
+							
+
+							<label>Cliente:</label>
+							<input class="w3-input w3-border" type="text" name="cliente" />
+							<label>CPF:</label>
+						    <input class="w3-input w3-border" type="text" name="cpf" />
+						    <label>Telefone:</label>
+							<input class="w3-input w3-border" type="text" name="tel" />
+
+			                <label> Sexo:</label>
+			                <span><input class="" type="radio" name="sexo" value="m" checked="m" />Masculino</span> 
+			                <span><input class="" type="radio" name="sexo" value="f" />Feminino</span>
+
+
+							
+								
+						</div>
+				<div class="cadastro-new">
+					<input type="submit" name="salvar" value="Salvar" class="w3-button w3-deep-orange">
+					<input type="submit" name="limpar" value="Limpar" class="w3-button w3-deep-orange">
+				</form>
+				</div>
+				
+		
+
+
+
+
+
+
+	     	<!-- Footer -->
+        <footer class="w3-padding-64 w3-small" id="footer">
+            <div class="w3-row-padding">
+            </div>
+        </footer>
+
+        <div class="w3-deep-orange w3-center w3-padding-24"> <a href="https://www.w3schools.com/w3css/default.asp" title="W3.CSS" target="_blank" class="w3-hover-opacity"> </a>
+        </div>
+
+        <!-- End page content -->
+        </div>
+
+
+        <script>
+            // Accordion 
+            function myAccFunc() {
+                var x = document.getElementById("demoAcc");
+                if (x.className.indexOf("w3-show") == -1) {
+                    x.className += " w3-show";
+                } else {
+                    x.className = x.className.replace(" w3-show", "");
+                }
+            }
+
+            // Click on the "Jeans" link on page load to open the accordion for demo purposes
+            document.getElementById("myBtn").click();
+
+
+            // Script to open and close sidebar
+            function w3_open() {
+                document.getElementById("mySidebar").style.display = "block";
+                document.getElementById("myOverlay").style.display = "block";
+            }
+
+            function w3_close() {
+                document.getElementById("mySidebar").style.display = "none";
+                document.getElementById("myOverlay").style.display = "none";
+            }
+        </script>
+
+
+			
+
+	</body>
+
+</html>
